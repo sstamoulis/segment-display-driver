@@ -1,0 +1,8 @@
+{
+    "cSpell.words": [
+        "GFEDCBA"
+    ],
+    "lldb.launch.preRunCommands": [
+        "type format add -f u 'unsigned char'"
+    ]
+}
