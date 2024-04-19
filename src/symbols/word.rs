@@ -39,28 +39,28 @@ impl<const N: usize> Word<N> {
     fn_from_uint!(u8, u16, u32, u64, usize);
 
     pub fn try_from_f32(num: f32) -> Result<Self, CannotConvert> {
-        let mut n = num as u32;
-        let mut arr = [misc::EMPTY; N];
-        for i in 0..N {
-            let d = (n % 10) as u8;
-            arr[i] = Symbol::from_u8(d).expect("d cannot be greater than 9 because of MOD");
-            n /= 10;
+        let n = num as i32;
+        if n >= 0 && n / 10_i32.pow(N as u32) > 0 {
+            // if integral part is positive
+            // and has more digits than we can hold
+            // then fill all digits with 9
+            Ok(Self([digits::NINE; N]))
+        } else if n < 0 && n / 10_i32.pow(N as u32 - 1) > 0 {
+            // if integral part is negative
+            // and has more digits than we can hold
+            // then fill all digits with 9
+            // except for the left-most which will be a minus
+            let mut arr = [digits::NINE; N];
+            arr[0] = misc::MINUS;
+            Ok(Self(arr))
+        } else {
+            // fill word from left to right with the integral part and
+            // then if we can fit any decimal digits,
+            // add a dot to the last integral digit
+            // and add the decimal digits
+            
+            todo!()
         }
-        for i in (0..N).rev() {
-            let d = ((n as u32) % 10) as u8;
-            let s = Symbol::from_u8(d).expect("d cannot be greater than 9 because of MOD");
-            if n >= 10.0 {
-                arr[i] = s;
-                n /= 10.0;
-            } else if n >= 1.0 {
-                arr[i] = s;
-                n = n - n.floor();
-            } else {
-                arr[i] = s.with_dot();
-                n *= 10.0;
-            }
-        }
-        todo!()
     }
 
     // pub fn from_u8(num: u8) -> Self {
