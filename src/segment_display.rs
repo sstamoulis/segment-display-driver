@@ -1,4 +1,4 @@
-use crate::symbols::{CannotConvertNaN, Word};
+use crate::symbols::{self, CannotConvertNaN, Word};
 
 pub trait SegmentDisplay<const NUM_DIGITS: usize> {
     fn set_digits(&mut self, digits: Word<NUM_DIGITS>);
@@ -18,9 +18,26 @@ pub trait ShowWord<const NUM_DIGITS: usize> {
     fn show_word(&mut self, word: Word<NUM_DIGITS>);
 }
 
-impl<SD, const NUM_DIGITS: usize> ShowWord<NUM_DIGITS> for SD where SD: SegmentDisplay<NUM_DIGITS> {
+pub trait Clear<const NUM_DIGITS: usize> {
+    fn clear(&mut self);
+}
+
+impl<SD, const NUM_DIGITS: usize> ShowWord<NUM_DIGITS> for SD
+where
+    SD: SegmentDisplay<NUM_DIGITS>,
+{
     fn show_word(&mut self, word: Word<NUM_DIGITS>) {
         self.set_digits(word);
+        self.show();
+    }
+}
+
+impl<SD, const NUM_DIGITS: usize> Clear<NUM_DIGITS> for SD
+where
+    SD: SegmentDisplay<NUM_DIGITS>,
+{
+    fn clear(&mut self) {
+        self.set_digits(Word::from_symbol_array([symbols::misc::EMPTY; NUM_DIGITS]));
         self.show();
     }
 }
