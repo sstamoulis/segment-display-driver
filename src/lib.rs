@@ -1,4 +1,5 @@
 #![no_std]
 
-mod symbols;
-mod segment_display;
+pub mod symbols;
+pub mod segment_display;
+pub mod shift_register_series;

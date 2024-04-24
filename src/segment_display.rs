@@ -1,35 +1,65 @@
 use crate::symbols::{self, CannotConvertNaN, Word};
 
+pub enum CommonPin {
+    Anode,
+    Cathode,
+}
+
 pub trait SegmentDisplay<const NUM_DIGITS: usize> {
     fn set_digits(&mut self, digits: Word<NUM_DIGITS>);
-
-    fn show(&mut self);
+    fn show_digits(&mut self);
 }
 
-pub trait ShowNumber<T, const NUM_DIGITS: usize> {
-    fn show_number(&mut self, num: T);
+pub trait Show<W, const N: usize> {
+    fn show(&mut self, word: W);
 }
 
-pub trait TryShowNumber<T, const NUM_DIGITS: usize> {
-    fn try_show_number(&mut self, num: T) -> Result<(), CannotConvertNaN>;
+// impl<SD, const NUM_DIGITS: usize> Show<Word<NUM_DIGITS>, NUM_DIGITS> for SD
+// where
+//     SD: SegmentDisplay<NUM_DIGITS>,
+// {
+//     fn show(&mut self, word: Word<NUM_DIGITS>) {
+//         self.set_digits(word);
+//         self.show_digits();
+//     }
+// }
+
+impl<SD, W, const NUM_DIGITS: usize> Show<W, NUM_DIGITS> for SD
+where
+    SD: SegmentDisplay<NUM_DIGITS>,
+    W: Into<Word<NUM_DIGITS>>,
+{
+    fn show(&mut self, word: W) {
+        self.set_digits(word.into());
+        self.show_digits();
+    }
 }
 
-pub trait ShowWord<const NUM_DIGITS: usize> {
-    fn show_word(&mut self, word: Word<NUM_DIGITS>);
+pub trait TryShow<W, const N: usize> {
+    type Error;
+    fn try_show(&mut self, word: W) -> Result<(), Self::Error>;
+}
+
+impl<SD, W, const NUM_DIGITS: usize> TryShow<W, NUM_DIGITS> for SD
+where
+    SD: SegmentDisplay<NUM_DIGITS>,
+    W: TryInto<Word<NUM_DIGITS>>,
+{
+    type Error = CannotConvertNaN;
+
+    fn try_show(&mut self, word: W) -> Result<(), Self::Error> {
+        match word.try_into() {
+            Ok(word) => {
+                self.show(word);
+                Ok(())
+            }
+            Err(_) => Err(CannotConvertNaN),
+        }
+    }
 }
 
 pub trait Clear<const NUM_DIGITS: usize> {
     fn clear(&mut self);
-}
-
-impl<SD, const NUM_DIGITS: usize> ShowWord<NUM_DIGITS> for SD
-where
-    SD: SegmentDisplay<NUM_DIGITS>,
-{
-    fn show_word(&mut self, word: Word<NUM_DIGITS>) {
-        self.set_digits(word);
-        self.show();
-    }
 }
 
 impl<SD, const NUM_DIGITS: usize> Clear<NUM_DIGITS> for SD
@@ -38,48 +68,6 @@ where
 {
     fn clear(&mut self) {
         self.set_digits(Word::from_symbol_array([symbols::misc::EMPTY; NUM_DIGITS]));
-        self.show();
+        self.show_digits();
     }
 }
-
-macro_rules! impl_show_number {
-    ($($T:ty),+) => {
-        $(
-            paste::paste!{
-                impl<SD, const NUM_DIGITS: usize> ShowNumber<$T, NUM_DIGITS> for SD
-                where
-                    SD: SegmentDisplay<NUM_DIGITS>,
-                {
-                    fn show_number(&mut self, num: $T) {
-                        let word = Word::<NUM_DIGITS>::[<from_ $T>](num);
-                        self.set_digits(word);
-                        self.show();
-                    }
-                }
-            }
-        )+
-    };
-}
-
-macro_rules! impl_try_show_number {
-    ($($T:ty),+) => {
-        $(
-            paste::paste!{
-                impl<SD, const NUM_DIGITS: usize> TryShowNumber<$T, NUM_DIGITS> for SD
-                where
-                    SD: SegmentDisplay<NUM_DIGITS>,
-                {
-                    fn try_show_number(&mut self, num: $T) -> Result<(), CannotConvertNaN> {
-                        let word = Word::<NUM_DIGITS>::[<try_from_ $T>](num)?;
-                        self.set_digits(word);
-                        self.show();
-                        Ok(())
-                    }
-                }
-            }
-        )+
-    };
-}
-
-impl_show_number!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);
-impl_try_show_number!(f32, f64);

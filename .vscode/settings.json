@@ -3,6 +3,8 @@
         "GFEDCBA"
     ],
     "lldb.launch.preRunCommands": [
-        "type format add -f u 'unsigned char'"
-    ]
+        "type format add -f u 'unsigned char'",
+        "type format add -f d 'signed char'"
+    ],
+    "rust-analyzer.check.command": "clippy"
 }

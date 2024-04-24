@@ -1,3 +1,10 @@
+use core::{
+    marker::PhantomData,
+    ops::{Deref, DerefMut},
+};
+
+use crate::segment_display::CommonPin;
+
 use super::digits;
 
 /// A symbol in common cathode configuration
@@ -8,7 +15,7 @@ use super::digits;
 /// | | GFEDCBA Byte
 /// |_| 0111111 0x00111111
 /// ```
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Symbol(u8);
 
 #[derive(Debug)]
@@ -18,7 +25,9 @@ impl Symbol {
     pub const fn from_byte(byte: u8) -> Self {
         Self(byte)
     }
+}
 
+impl Symbol {
     #[allow(dead_code)]
     pub const fn from_u8(num: u8) -> Result<Self, NoSymbolFound> {
         match num {
@@ -39,6 +48,13 @@ impl Symbol {
     pub const fn with_dot(self) -> Self {
         Self(self.0 | 0b10000000)
     }
+
+    pub const fn get_value(&self, common_pin: &CommonPin) -> u8 {
+        match common_pin {
+            CommonPin::Anode => !self.0,
+            CommonPin::Cathode => self.0,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -47,6 +63,9 @@ mod tests {
 
     #[test]
     fn zero_from_u8() {
-        assert!(matches!(Symbol::from_u8(0), Ok(digits::ZERO)))
+        assert!(matches!(
+            Symbol::from_u8(0),
+            Ok(digits::ZERO)
+        ))
     }
 }
